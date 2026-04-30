@@ -11,4 +11,4 @@
 
 
 > ### Clique aqui para Baixar o Artigo cientifico.
->[Artigo cientifico Br.Arm concluido.pdf](https://github.com/TrilloBit3s/RoboticaArduino-hexapode-com-bluetooth/files/6153798/Artigo.cientifico.Br.Arm.concluido.pdf)
+>[Artigo cientifico Br.Arm concluido.pdf]([https://github.com/TrilloBit3s/RoboticaArduino-hexapode-com-bluetooth/files/6153798/Artigo.cientifico.Br.Arm.concluido.pdf](https://revistas.ung.br/index.php/computacaoaplicada/article/view/3324))
