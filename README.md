@@ -10,8 +10,8 @@
 ![Circuit drawing](https://user-images.githubusercontent.com/79748858/111413327-cdd20980-86bc-11eb-90b4-9520431652d9.jpg)
 
 
-> ### Clique aqui para baixar o artigo científico  
-[Artigo científico Br.Arm concluído.pdf](https://revistas.ung.br/index.php/computacaoaplicada/article/view/3324)
+### Clique aqui para baixar o artigo científico
+[Artigo científico Br.Arm concluído.pdf](https://revistas.ung.br/index.php/computacaoaplicada/article/view/3324/2568)
 
 ### Clique aqui se quer ir para a página do artigo: 
-[Artigo científico Br.Arm concluído.pdf](https://revistas.ung.br/index.php/computacaoaplicada/article/view/3324/2568)
+[Artigo científico Br.Arm concluído.pdf](https://revistas.ung.br/index.php/computacaoaplicada/article/view/3324)
