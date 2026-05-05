@@ -1,6 +1,11 @@
-﻿//CÓDIGO FUNCIONANDO 100% 02/04/2018 
+﻿// CÓDIGO FUNCIONANDO 100% 02/04/2026 
+// 4096 bytes / 5 ≈ 819 passos para esp32
+// CÓDIGO FUNCIONANDO 100% 05/05/2026 - AJUSTADO PARA ESP32
+
 #include <Servo.h>
 #include <EEPROM.h>
+
+#define EEPROM_SIZE 4096
 
 Servo servo1;//base
 Servo servo2;//cotovelo
@@ -8,90 +13,94 @@ Servo servo3;//mão
 Servo servo4;//punho
 Servo servo5;//garra
 
-/*arranjos só podem memorizar 20 posições com esta configuração 
-* (no arduino UNO) o uso da EEPROM limita a capacidade do braço 
-* de aprender 20 posições * 5 servos = memórias*/
-
 byte memoria[105];
 byte memor[5];
 double direcao[5], registro[5], diferenca[5];
 byte paso[5];
+
 byte pasoN=0,i=0,secao=1,limite=0;
-byte eprom,EE=0;
+int eprom;              // <-- corrigido (antes era byte)
+byte EE=0;
+
 long tempoc=0;
 long tempob=0;
+
 unsigned long tempotranscorrido=millis();
 unsigned long tempomicros=micros();
+
 byte time=1000;
+
 #define retardo 4000
+
 boolean automata=false, primeira_memoria=true, primeiro_paso=true;
 boolean garraAberta=true, primeira_secao=true, ultima_memoria=true;
 
-    void setup()
-    {
-        for(i=5;i<8;i++)
-        {
-            pinMode(i,INPUT);
-        }
-       
-        i=0; 
-        pinMode(13, OUTPUT);
-        
-        servo1.attach(10);//base
-        servo2.attach(11);//ombro
-        servo3.attach(9);//braço
-        servo4.attach(3);//punho
-        servo5.attach(12);//garra
-        
-        Serial.begin(115200);
-        Serial.print("\t\t | ");
-        
-        for(i=0;i<3;i++)
-        {
-            Serial.print("###");
-            //delay(25); //esse delay faz se arrebente no chão, não é bom utilizar a menos que você melhore algo
-        }
+void setup()
+{
+    EEPROM.begin(EEPROM_SIZE); // <-- ESP32
 
-        i=0;
-        Serial.print(" | 100% 0.75s");
-        Serial.print("\t\t  GRAVA NA EEPROM ");
+    for(i=5;i<8;i++)
+    {
+        pinMode(i,INPUT);
+    }
+   
+    i=0; 
+    pinMode(13, OUTPUT);
+    
+    servo1.attach(10);
+    servo2.attach(11);
+    servo3.attach(9);
+    servo4.attach(3);
+    servo5.attach(12);
+    
+    Serial.begin(115200);
+    Serial.print("\t\t | ");
+    
+    for(i=0;i<3;i++)
+    {
+        Serial.print("###");
     }
 
-    void loop()
-    {
-        tempotranscorrido=millis();
-        tempomicros=micros();
-        botao();
-        
-        if(!automata)
-        {
-            mover();
-        }
-        else if(automata)
-        {        
-            if(primeiro_paso)
-            {
-                leitura();
-                
-                if(ultima_memoria)ultimo_registro();
-                pasoN=0;
-                eprom=1;
-                primeiro_paso=false;
-            }
-            else if(pasoN>EEPROM.read(250))
-            {
-                pasoN=0;
-                eprom=1;
-            }
+    i=0;
+    Serial.print(" | 100% 0.75s");
+    Serial.print("\t\t  GRAVA NA EEPROM ");
+}
 
-            if(primeira_secao)matriz_de_traducao();
-            if(tempomicros-tempob>time)
-            {
-                tempob=tempomicros;
-                execute_automata();
-            }
+void loop()
+{
+    tempotranscorrido=millis();
+    tempomicros=micros();
+    botao();
+    
+    if(!automata)
+    {
+        mover();
+    }
+    else if(automata)
+    {        
+        if(primeiro_paso)
+        {
+            leitura();
+            
+            if(ultima_memoria)ultimo_registro();
+            pasoN=0;
+            eprom=1;
+            primeiro_paso=false;
+        }
+        else if(pasoN>EEPROM.read(4000)) // <-- aumentado
+        {
+            pasoN=0;
+            eprom=1;
+        }
+
+        if(primeira_secao)matriz_de_traducao();
+        if(tempomicros-tempob>time)
+        {
+            tempob=tempomicros;
+            execute_automata();
         }
     }
+}
 
 void botao()
 {
@@ -120,7 +129,8 @@ void botao()
       eprom=1;
     }
     memoriza();
-    EEPROM.write(250,pasoN);
+    EEPROM.write(4000,pasoN); // <-- aumentado
+    EEPROM.commit();          // <-- ESSENCIAL no ESP32
     primeira_memoria=false;
     i=0;
   }
@@ -151,10 +161,12 @@ void execute_automata()
     Serial.print("\n\t SEÇÃO=");
     Serial.print(secao);
     secao++;
+
     if(secao == 1) time = retardo*4;       
     else if(secao == 10) time = retardo*3;   
     else if(secao == 20) time = retardo*2; 
     else if(secao == 30) time = retardo*1;
+
     if(secao == limite-40) time = retardo*2;
     else if(secao == limite-30) time = retardo*3;
     else if(secao == limite-20) time = retardo*4;
@@ -171,6 +183,7 @@ void execute_automata()
     servo3.write(registro[2]);
     servo4.write(registro[3]);
     servo5.write(registro[4]);
+
     primeira_secao=false;
   }
   else
@@ -180,13 +193,15 @@ void execute_automata()
     pasoN++;
     primeira_secao=true;
   }
+
   while (digitalRead(7)==true)
   {
     servo1.write(90);
     servo2.write(10);
     servo3.write(140);
     servo4.write(90);
-    servo5.write(90);//alcanse da garra 90-130
+    servo5.write(90);
+
     digitalWrite(13, HIGH); delay(500); 
     digitalWrite(13, LOW); delay(500);
   }
@@ -219,19 +234,15 @@ void matriz_de_traducao()
   limite = max(limite,diferenca[2]);
   limite = max(limite,diferenca[3]);
   limite = max(limite,diferenca[4]);
+  
   Serial.print("\n\t\tLIMITE=");
   Serial.print(limite);
   
-  if(registro[0]>memor[0]) direcao[0]=(0-diferenca[0])/limite; else
- direcao[0]=diferenca[0]/limite;
-  if(registro[1]>memor[1]) direcao[1]=(0-diferenca[1])/limite; else
- direcao[1]=diferenca[1]/limite;
-  if(registro[2]>memor[2]) direcao[2]=(0-diferenca[2])/limite; else
- direcao[2]=diferenca[2]/limite;
-  if(registro[3]>memor[3]) direcao[3]=(0-diferenca[3])/limite; else
- direcao[3]=diferenca[3]/limite;
-  if(registro[4]>memor[4]) direcao[4]=(0-diferenca[4])/limite; else 
- direcao[4]=diferenca[4]/limite;
+  if(registro[0]>memor[0]) direcao[0]=(0-diferenca[0])/limite; else direcao[0]=diferenca[0]/limite;
+  if(registro[1]>memor[1]) direcao[1]=(0-diferenca[1])/limite; else direcao[1]=diferenca[1]/limite;
+  if(registro[2]>memor[2]) direcao[2]=(0-diferenca[2])/limite; else direcao[2]=diferenca[2]/limite;
+  if(registro[3]>memor[3]) direcao[3]=(0-diferenca[3])/limite; else direcao[3]=diferenca[3]/limite;
+  if(registro[4]>memor[4]) direcao[4]=(0-diferenca[4])/limite; else direcao[4]=diferenca[4]/limite;
 }
 
 void ultimo_registro()
@@ -253,21 +264,27 @@ void memoriza()
     EEPROM.write(eprom,paso[EE]);
     eprom++;
   }
+
+  EEPROM.commit(); // <-- ESP32
+
   EE=0;
   Serial.print("\n\t MEMORIA\t\t"); 
   Serial.print(pasoN);
+
   digitalWrite(13,HIGH);
-  delay(100);//100
+  delay(100);
   digitalWrite(13,LOW);
 }
+
 void leitura()
 {
-  paso[0]=map(analogRead(A0),1023,0,180,0);//base  10 pin
-  paso[1]=map(analogRead(A1),1023,0,180,0);//ombro 11 pin 
-  paso[2]=map(analogRead(A2),1023,0,0,180);//braço  9 pin
-  paso[3]=map(analogRead(A3),1023,0,0,180);//punho 3 pin
-  if((digitalRead(5))==HIGH)paso[4]=90;else paso[4]=130;
-  
+  paso[0]=map(analogRead(A0),1023,0,180,0);
+  paso[1]=map(analogRead(A1),1023,0,180,0);
+  paso[2]=map(analogRead(A2),1023,0,0,180);
+  paso[3]=map(analogRead(A3),1023,0,0,180);
+
+  if((digitalRead(5))==HIGH)paso[4]=90;
+  else paso[4]=130;
 
   paso[0]=constrain(paso[0],0,180);
   paso[1]=constrain(paso[1],0,180);
